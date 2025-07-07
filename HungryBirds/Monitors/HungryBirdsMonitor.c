@@ -8,6 +8,9 @@
 //Guilherme Sousa Lopes - 535869
 //Lucas Rodrigues Aragao - 538390
 
+// gcc -pthread -o hungry_semaphore HungryBirdsSemaphore.c
+// ./hungry_semaphore <F> <N> <time_sleep>
+
 typedef struct {
     int F;               
     int countFood;       
@@ -28,7 +31,7 @@ void monitor_init(int F) {
     pthread_cond_init(&monitor.children, NULL);
     pthread_cond_init(&monitor.parent, NULL);
 }
-
+    
 void get_food(int id) {
     pthread_mutex_lock(&monitor.mtx);
 
@@ -73,12 +76,12 @@ void restock_food() {
     pthread_mutex_unlock(&monitor.mtx);
 }
 
-void* son(void* arg) {
+void* children(void* arg) {
     int id = *(int*)arg;
     while (1) {
         get_food(id);
         release_food(id);
-        usleep(time_sleep); // tempo dormindo
+        usleep(time_sleep);
     }
     return NULL;
 }
@@ -108,7 +111,7 @@ int main(int argc, char* argv[]) {
 
     for (int i = 0; i < N; i++) {
         ids[i] = i + 1;
-        pthread_create(&filhos[i], NULL, son, &ids[i]);
+        pthread_create(&filhos[i], NULL, children, &ids[i]);
     }
 
     pthread_create(&pai, NULL, parent, NULL);

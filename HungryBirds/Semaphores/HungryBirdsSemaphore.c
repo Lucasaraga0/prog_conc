@@ -8,15 +8,18 @@
 
 //Guilherme Sousa Lopes - 535869
 //Lucas Rodrigues Aragao - 538390
+ 
+// gcc -pthread -o hungry_semaphore HungryBirdsSemaphore.c
+// ./hungry_semaphore <F> <N> <time_sleep>
 
 int F;
 int N;
 int time_sleep;
 int food_count;
 
-sem_t sem_parent, sem_son, sem_food;
+sem_t sem_parent, sem_children, sem_food;
 
-void* son(void* arg) {
+void* children(void* arg) {
     int id = *(int*)arg;
     while (1) {
         sem_wait(&sem_food);
@@ -25,7 +28,7 @@ void* son(void* arg) {
         if (food_count == 0) {
             printf("Filho %d viu que acabou a comida. Acordando o pai.\n", id);
             sem_post(&sem_parent);
-            sem_wait(&sem_son);
+            sem_wait(&sem_children);
             printf("Filho %d viu que o pai repos a comida.\n", id);
         }
         sem_post(&sem_food);
@@ -39,7 +42,7 @@ void* parent(void* arg) {
         sem_wait(&sem_parent);
         food_count = F;
         printf("Pai reabasteceu a comida com %d porcoes.\n", F);
-        sem_post(&sem_son);
+        sem_post(&sem_children);
     }
     return NULL;
 }
@@ -51,18 +54,18 @@ int main(int argc, char *argv[]) {
     food_count = F;
 
     pthread_t parent_thread;
-    pthread_t *sons = malloc(sizeof(pthread_t) * N);
+    pthread_t *children = malloc(sizeof(pthread_t) * N);
     int *ids = malloc(sizeof(int) * N);
 
     sem_init(&sem_parent, 0, 0);
-    sem_init(&sem_son, 0, 0);
+    sem_init(&sem_children, 0, 0);
     sem_init(&sem_food, 0, 1);
 
     pthread_create(&parent_thread, NULL, parent, NULL);
     for (int i = 0; i < N; i++) {
         int *id = malloc(sizeof(int));
         *id = i + 1;
-        pthread_create(&sons[i], NULL, son, id);
+        pthread_create(&children[i], NULL, children, id);
     }
 
     while(1) {}
